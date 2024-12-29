@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<!DOCTYPE html>
+<html data-bs-theme="dark" lang="pt-BR">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
+    <title>I18N Manager</title>
+    <link rel="stylesheet" href="assets/bootstrap/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Poppins&amp;display=swap">
+    <link rel="stylesheet" href="assets/css/bs-theme-overrides.css">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="assets/css/Navbar-Centered-Brand-Dark-icons.css">
+</head>
+<body>
+    <script type="importmap">
+        {
+          "imports": {
+            "@google/generative-ai": "https://esm.run/@google/generative-ai"
+          }
+        }
+    </script>
+    <script type="module">
+        import { GoogleGenerativeAI } from "@google/generative-ai";
+
+        let API_KEY = localStorage.getItem('api-token') || "...";
+        let genAI = new GoogleGenerativeAI(API_KEY);
+
+        function initializeGenAI() {
+            genAI = new GoogleGenerativeAI(API_KEY);
+        }
+
+        // The Gemini 1.5 models are versatile and work with most use cases
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
+        // Function to fill with AI
+        async function fillWithAI(input, referenceContent, language) {
+            try {
+                const chatSession = model.startChat({
+                    generationConfig: {
+                        temperature: 1,
+                        topP: 0.95,
+                        topK: 64,
+                        maxOutputTokens: 8192,
+                        responseMimeType: "text/plain",
+                    },
+                    history: [],
+                });
+
+                const result = await chatSession.sendMessage(`Translate the following content into ${language}: '${referenceContent}'. Ensure that placeholders like <%>, %user%, %target%, or similar remain completely unchanged and are not translated or modified. Adapt the surrounding text to fit the context naturally while keeping the placeholders intact. If emojis or special characters are present, retain them as is. Return only the translated string.`)
+                input.value = result.response.text();
+                updateTranslationPercentage(language, translationsCache);
+                checkEmptyFields();
+            } catch (error) {
+                alert(`Erro ao preencher com IA: ${error.message}`);
+            }
+        }
+
+        // Function to translate all empty fields in a row
+        async function translateRowEmptyFields(row, referenceContent) {
+            const inputs = row.querySelectorAll('input.verify_vazio');
+            for (const input of inputs) {
+                if (!input.value) {
+                    const language = input.getAttribute('data-language');
+                    await fillWithAI(input, referenceContent, language);
+                }
+            }
+        }
+
+        // Export the functions to be used in tableHandler.js
+        window.fillWithAI = fillWithAI;
+        window.initializeGenAI = initializeGenAI;
+        window.translateRowEmptyFields = translateRowEmptyFields;
+
+        document.getElementById('save-settings').addEventListener('click', () => {
+            const apiTokenInput = document.getElementById('api-token');
+            API_KEY = apiTokenInput.value;
+            localStorage.setItem('api-token', API_KEY);
+            initializeGenAI();
+        });
+    </script>
+    <section class="position-relative py-4 py-xl-5" id="upload-section">
+        <div class="container">
+            <div class="row d-flex justify-content-center">
+                <div class="col-md-6 col-xl-4 col-xxl-8">
+                    <div class="card mb-5">
+                        <div class="card-body d-flex flex-column align-items-center">
+                            <h2 class="text-primary">I18N Manager</h2>
+                            <p class="mx-3">Insira os arquivos .json das traduções que deseja editar.</p>
+                            <form class="text-center"><input id="idiomas_input" class="form-control d-flex" type="file"  accept=".json" multiple/></form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+<div id="translations-section" class=" mt-5 p-2" style="display: none;">
+    <div class="d-flex align-items-center mb-3">
+        <input type="text" id="search-bar" class="form-control me-2" placeholder="Buscar por chave ou texto...">
+        <div class="buttons-container d-flex">
+            <button class="btn btn-primary me-2" id="add_key">Adicionar Nova Chave</button>
+            <button class="btn btn-secondary me-2" id="settings-button">Configurações</button>
+            <button class="btn btn-success me-2" id="save-translations">Exportar</button>
+        </div>
+    </div>
+    <div class="table-responsive table-container">
+        <table id="translations-table" class="table table-hover table-bordered">
+            <thead>
+
+            </thead>
+            <tbody id="translations-container"></tbody>
+        </table>
+    </div>
+</div>
+
+    <div id="edit-modal" class="modal" style="display: none;">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Editar Tradução</h5>
+                    <button type="button" class="btn-close close-button" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <label for="reference-content">Conteúdo de Referência: <strong>Idioma de Referência:</strong> <span id="reference-language-display"></span></label>
+                    <textarea id="reference-content" class="form-control" rows="4" readonly></textarea>
+                    <label for="edit-input" class="mt-3">Novo Conteúdo: <strong>Idioma Atual:</strong> <span id="current-language-display"></span></label>
+                    <textarea id="edit-input" class="form-control" rows="10"></textarea>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" id="save-edit">Salvar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="settings-modal" class="modal" style="display: none;">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Configurações</h5>
+                    <button type="button" class="btn-close close-button" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <label for="reference-language">Idioma de Referência para IA:</label>
+                    <select id="reference-language" class="form-select">
+                        <!-- Opções serão preenchidas dinamicamente -->
+                    </select>
+                    <label for="api-token" class="mt-3">API Token:</label>
+                    <input type="text" id="api-token" class="form-control">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" id="save-settings">Salvar Configurações</button>
+                    <button type="button" class="btn btn-danger" id="end-session">Finalizar Sessão</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
+    <script src="js/fileHandler.js"></script>
+    <script src="js/modalHandler.js"></script>
+    <script src="js/tableHandler.js"></script>
+    <script src="js/checkEmptyFields.js"></script>
+    <script src="js/settingsHandler.js"></script>
+    <script src="js/saveTranslations.js"></script>
+    <script>
+        document.querySelectorAll('.ai-button').forEach(button => {
+            button.addEventListener('click', async function() {
+                const row = this.closest('tr');
+                const referenceContent = document.getElementById('reference-content').value;
+                await translateRowEmptyFields(row, referenceContent);
+            });
+        });
+    </script>
+</body>
+</html>
