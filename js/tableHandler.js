@@ -19,7 +19,6 @@ function loadTranslations(translations, container) {
     headerRow.appendChild(keyHeader);
 
     const languages = Object.keys(translations);
-
     const totalKeys = countKeys(translations[defaultLanguage]);
 
     languages.forEach(language => {
@@ -44,19 +43,7 @@ function loadTranslations(translations, container) {
 
     const keys = new Set();
     languages.forEach(language => {
-        function collectKeys(obj, parentKey = '') {
-            for (const key in obj) {
-                if (obj.hasOwnProperty(key)) {
-                    const fullKey = parentKey ? `${parentKey}.${key}` : key;
-                    if (typeof obj[key] === 'object' && !Array.isArray(obj[key])) {
-                        collectKeys(obj[key], fullKey);
-                    } else {
-                        keys.add(fullKey);
-                    }
-                }
-            }
-        }
-        collectKeys(translations[language]);
+        collectKeys(translations[language], keys);
     });
 
     keys.forEach(key => {
@@ -93,6 +80,9 @@ function loadTranslations(translations, container) {
             });
             input.addEventListener('input', function() {
                 updateTranslationPercentage(language);
+                if (language === defaultLanguage) {
+                    updateReferenceContent(key, input.value);
+                }
             });
 
             valueCell.appendChild(input);
@@ -210,9 +200,52 @@ function filterTable(searchTerm) {
     });
 }
 
-function clearProject() {
-    const tbody = document.getElementById('translations-tbody');
-    tbody.innerHTML = '';
-    updateTranslationPercentage();
+function collectKeys(obj, keys, parentKey = '') {
+    for (const key in obj) {
+        if (obj.hasOwnProperty(key)) {
+            const fullKey = parentKey ? `${parentKey}.${key}` : key;
+            if (typeof obj[key] === 'object' && !Array.isArray(obj[key])) {
+                collectKeys(obj[key], keys, fullKey);
+            } else {
+                keys.add(fullKey);
+            }
+        }
+    }
+}
+
+function updateReferenceContent(key, newValue) {
+    const keys = key.split('.');
+    let referenceContent = translations[defaultLanguage];
+    keys.forEach((k, index) => {
+        if (index === keys.length - 1) {
+            referenceContent[k] = newValue;
+        } else {
+            referenceContent = referenceContent[k];
+        }
+    });
+
+    // Atualizar os campos de entrada de referência com o novo valor de referência
+    const rows = document.querySelectorAll(`#translations-tbody tr`);
+    rows.forEach(row => {
+        const keyCell = row.querySelector('.key-cell');
+        if (keyCell && keyCell.textContent === key) {
+            const referenceInput = row.querySelector(`input[data-language="${defaultLanguage}"]`);
+            if (referenceInput) {
+                referenceInput.value = newValue;
+            }
+        }
+    });
+
+    // Atualizar o conteúdo do modal de edição
+    const modal = document.getElementById('edit-modal');
+    if (modal) {
+        const modalKey = modal.getAttribute('data-key');
+        if (modalKey === key) {
+            const modalInput = modal.querySelector('input[data-language="' + defaultLanguage + '"]');
+            if (modalInput) {
+                modalInput.value = newValue;
+            }
+        }
+    }
 }
 

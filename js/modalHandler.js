@@ -12,16 +12,7 @@ function openEditModal(input) {
     currentLanguageDisplay.textContent = language;
 
     const keys = key.split('.');
-    let referenceValue = getNestedValue(translations[defaultLanguage] || {}, keys); // Garante que translations[defaultLanguage] esteja definido
-
-    if (!translations[defaultLanguage]) {
-        console.error(`translations[${defaultLanguage}] está indefinido`);
-    }
-
-    console.log('defaultLanguage:', defaultLanguage);
-    console.log('translations[defaultLanguage]:', translations[defaultLanguage]);
-    console.log('keys:', keys);
-    console.log('referenceValue:', referenceValue);
+    let referenceValue = getNestedValue(translations[defaultLanguage] || {}, keys);
 
     referenceContent.value = referenceValue || '';
     editInput.value = input.value;
@@ -33,6 +24,9 @@ function openEditModal(input) {
         updateTranslationPercentage(language);
         checkEmptyFields();
         modal.style.display = 'none';
+        if (language === defaultLanguage) {
+            updateReferenceContent(key, editInput.value);
+        }
     };
 
     document.querySelectorAll('.close-button').forEach(button => {

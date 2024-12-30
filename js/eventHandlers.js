@@ -3,33 +3,21 @@ document.getElementById('add_key')?.addEventListener('click', function() {
     if (key) {
         const languages = Array.from(document.querySelectorAll('th[data-language]')).map(th => th.getAttribute('data-language'));
         const row = document.createElement('tr');
-        row.id = `row-${key}`; // Adiciona um ID à linha
+        row.id = `row-${key}`;
         const keyCell = document.createElement('td');
         keyCell.textContent = key;
-        keyCell.classList.add('key-cell'); // Adiciona a classe key-cell
+        keyCell.classList.add('key-cell');
         row.appendChild(keyCell);
-
-        let hasEmptyField = false;
 
         languages.forEach(language => {
             const valueCell = document.createElement('td');
             const input = document.createElement('input');
             input.type = 'text';
-            input.classList.add('expand-input', 'verify_vazio'); // Adiciona a classe verify_vazio
-            input.value = ''; // Inicializa o campo como nulo
-            input.setAttribute('data-language', language); // Adiciona o atributo data-language
-            input.setAttribute('readonly', true); // Bloqueia a edição direta
-            input.addEventListener('focus', function() {
-                openEditModal(input);
-            });
-            input.addEventListener('input', function() {
-                updateTranslationPercentage(language);
-            });
-
-            if (!input.value) {
-                hasEmptyField = true;
-            }
-
+            input.classList.add('expand-input', 'verify_vazio');
+            input.setAttribute('data-language', language);
+            input.setAttribute('readonly', true);
+            input.addEventListener('focus', () => openEditModal(input));
+            input.addEventListener('input', () => updateTranslationPercentage(language));
             valueCell.appendChild(input);
             row.appendChild(valueCell);
         });
@@ -37,12 +25,10 @@ document.getElementById('add_key')?.addEventListener('click', function() {
         const actionsCell = document.createElement('td');
         const deleteButton = document.createElement('button');
         deleteButton.textContent = 'Deletar';
-        deleteButton.classList.add('btn', 'btn-danger'); // Adiciona as classes btn e btn-primary
+        deleteButton.classList.add('btn', 'btn-danger');
         deleteButton.addEventListener('click', function() {
             row.remove();
-            languages.forEach(language => {
-                updateTranslationPercentage(language);
-            });
+            languages.forEach(language => updateTranslationPercentage(language));
         });
         actionsCell.appendChild(deleteButton);
         row.appendChild(actionsCell);
@@ -50,26 +36,18 @@ document.getElementById('add_key')?.addEventListener('click', function() {
         const fillCell = document.createElement('td');
         const fillButton = document.createElement('button');
         fillButton.textContent = 'IA';
-        fillButton.classList.add('btn', 'btn-primary', 'ml-2', 'ai-button'); // Adiciona as classes btn, btn-primary, ml-2 e ai-button
-        fillButton.disabled = false; // Sempre ativa o botão
+        fillButton.classList.add('btn', 'btn-primary', 'ml-2', 'ai-button');
         fillButton.addEventListener('click', async function() {
             await fillWithAI(input, key, language);
         });
-        checkEmptyFields()
         fillCell.appendChild(fillButton);
         row.appendChild(fillCell);
 
-        // Adiciona a linha ao início do tbody da tabela existente
         const tbody = document.getElementById('translations-tbody');
         tbody.insertBefore(row, tbody.firstChild);
-
-        // Desloca o scroll para o novo item
         row.scrollIntoView({ behavior: 'smooth' });
 
-        // Atualiza a porcentagem de todas as linguagens
-        languages.forEach(language => {
-            updateTranslationPercentage(language);
-        });
+        languages.forEach(language => updateTranslationPercentage(language));
     }
 });
 
@@ -80,11 +58,9 @@ document.getElementById('next-empty-field')?.addEventListener('click', function(
     if (emptyFields.length > 0) {
         currentEmptyFieldIndex = (currentEmptyFieldIndex + 1) % emptyFields.length;
         const row = emptyFields[currentEmptyFieldIndex].closest('tr');
-        row.classList.add('highlight-row'); // Adiciona a classe highlight-row
+        row.classList.add('highlight-row');
         row.scrollIntoView({ behavior: 'smooth' });
-        setTimeout(() => {
-            row.classList.remove('highlight-row'); // Remove a classe highlight-row após 1 segundo
-        }, 1000);
+        setTimeout(() => row.classList.remove('highlight-row'), 1000);
     }
 });
 
@@ -93,10 +69,8 @@ document.getElementById('prev-empty-field')?.addEventListener('click', function(
     if (emptyFields.length > 0) {
         currentEmptyFieldIndex = (currentEmptyFieldIndex - 1 + emptyFields.length) % emptyFields.length;
         const row = emptyFields[currentEmptyFieldIndex].closest('tr');
-        row.classList.add('highlight-row'); // Adiciona a classe highlight-row
+        row.classList.add('highlight-row');
         row.scrollIntoView({ behavior: 'smooth' });
-        setTimeout(() => {
-            row.classList.remove('highlight-row'); // Remove a classe highlight-row após 1 segundo
-        }, 1000);
+        setTimeout(() => row.classList.remove('highlight-row'), 1000);
     }
 });

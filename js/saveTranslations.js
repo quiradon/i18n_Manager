@@ -1,19 +1,14 @@
 document.getElementById('save-translations').addEventListener('click', async function() {
     const translations = {};
 
-    const rows = document.querySelectorAll('table tr');
-    rows.forEach(row => {
+    document.querySelectorAll('table tr').forEach(row => {
         const keyCell = row.querySelector('.key-cell');
-        const valueInputs = row.querySelectorAll('input');
-
         if (keyCell) {
             const key = keyCell.textContent;
-            valueInputs.forEach(input => {
+            row.querySelectorAll('input').forEach(input => {
                 const language = input.getAttribute('data-language');
                 const value = input.value;
-                if (!translations[language]) {
-                    translations[language] = {};
-                }
+                if (!translations[language]) translations[language] = {};
                 const keys = key.split('.');
                 let current = translations[language];
                 keys.forEach((keyPart, index) => {
@@ -31,9 +26,7 @@ document.getElementById('save-translations').addEventListener('click', async fun
     const zip = new JSZip();
     Object.keys(translations).forEach(language => {
         const jsonOutput = JSON.stringify(translations[language]);
-        if (jsonOutput !== '{}') {
-            zip.file(`${language}.json`, jsonOutput);
-        }
+        if (jsonOutput !== '{}') zip.file(`${language}.json`, jsonOutput);
     });
 
     const content = await zip.generateAsync({ type: 'blob' });

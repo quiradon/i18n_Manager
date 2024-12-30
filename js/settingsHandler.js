@@ -5,7 +5,6 @@ document.getElementById('settings-button').addEventListener('click', function() 
     const apiTokenInput = document.getElementById('api-token');
 
     apiTokenInput.value = localStorage.getItem('api-token') || '';
-
     modal.style.display = 'block';
 
     const closeModal = () => modal.style.display = 'none';
@@ -17,7 +16,7 @@ document.getElementById('settings-button').addEventListener('click', function() 
         const apiToken = apiTokenInput.value;
         initializeGenAI(apiToken);
         localStorage.setItem('api-token', apiToken);
-        alert(`API Token salvo.`);
+        alert('API Token salvo.');
         closeModal();
     };
 });
