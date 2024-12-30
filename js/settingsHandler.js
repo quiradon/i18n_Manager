@@ -14,6 +14,10 @@ document.getElementById('settings-button').addEventListener('click', function() 
         referenceLanguageSelect.appendChild(option);
     });
 
+    // Carregar o idioma de referência salvo
+    const savedReferenceLanguage = localStorage.getItem('reference-language') || 'en';
+    referenceLanguageSelect.value = savedReferenceLanguage;
+
     apiTokenInput.value = localStorage.getItem('api-token') || '';
 
     modal.style.display = 'block';
@@ -27,7 +31,11 @@ document.getElementById('settings-button').addEventListener('click', function() 
         const selectedLanguage = referenceLanguageSelect.value;
         const apiToken = apiTokenInput.value;
         initializeGenAI(apiToken);
+        localStorage.setItem('reference-language', selectedLanguage);
+        document.getElementById('reference-language-display').innerText = selectedLanguage;
+        document.getElementById('reference-content').setAttribute('data-language', selectedLanguage);
         localStorage.setItem('api-token', apiToken);
+        localStorage.setItem('reference-language', selectedLanguage); // Salve a linguagem de referência
         alert(`Idioma de referência para IA selecionado: ${selectedLanguage}\nAPI Token salvo.`);
         closeModal();
     };

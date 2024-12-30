@@ -1,4 +1,5 @@
-let defaultLanguage = null;
+let defaultLanguage = 'en';
+let referenceLanguage = localStorage.getItem('reference-language') || 'en'; // Defina a linguagem de referência para inglês
 
 function loadTranslations(translations, container) {
     container.innerHTML = '';
@@ -19,18 +20,20 @@ function loadTranslations(translations, container) {
     headerRow.appendChild(keyHeader);
 
     const languages = Object.keys(translations);
-    let referenceLanguage = languages[0];
 
     let maxFilledKeys = 0;
     languages.forEach(language => {
         const filledKeys = countFilledKeys(translations[language]);
         if (filledKeys > maxFilledKeys) {
             maxFilledKeys = filledKeys;
-            referenceLanguage = language;
+            if (!localStorage.getItem('reference-language')) {
+                referenceLanguage = language;
+            }
         }
     });
 
-    defaultLanguage = referenceLanguage;
+    defaultLanguage = 'en';
+    referenceLanguage = localStorage.getItem('reference-language') || 'en';
     const totalKeys = countKeys(translations[referenceLanguage]);
 
     languages.forEach(language => {
