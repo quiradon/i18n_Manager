@@ -22,7 +22,7 @@
     <script type="module">
         import { GoogleGenerativeAI } from "@google/generative-ai";
 
-        let API_KEY = localStorage.getItem('api-token') || "...";
+        let API_KEY = "...";
         let genAI = new GoogleGenerativeAI(API_KEY);
 
         function initializeGenAI() {
@@ -78,6 +78,9 @@
             localStorage.setItem('api-token', API_KEY);
             initializeGenAI();
         });
+
+        // Limpa os dados salvos no navegador ao carregar a página
+        localStorage.clear();
     </script>
     <section class="position-relative py-4 py-xl-5" id="upload-section">
         <div class="container">
