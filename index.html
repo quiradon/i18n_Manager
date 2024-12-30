@@ -73,14 +73,14 @@
         window.translateRowEmptyFields = translateRowEmptyFields;
 
         document.getElementById('save-settings').addEventListener('click', () => {
-            const apiTokenInput = document.getElementById('api-token');
+            let apiTokenInput = document.getElementById('api-token');
             API_KEY = apiTokenInput.value;
             localStorage.setItem('api-token', API_KEY);
             initializeGenAI();
         });
 
         // Limpa os dados salvos no navegador ao carregar a página, exceto a chave de API
-        const apiToken = localStorage.getItem('api-token');
+        let apiToken = localStorage.getItem('api-token');
         localStorage.clear();
         if (apiToken) {
             localStorage.setItem('api-token', apiToken);
