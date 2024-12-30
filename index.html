@@ -51,7 +51,8 @@
                 updateTranslationPercentage(language, translationsCache);
                 checkEmptyFields();
             } catch (error) {
-                alert(`Erro ao preencher com IA: ${error.message}`);
+                console.error(`Erro ao preencher com IA: ${error.message}`);
+                throw new Error(`Erro ao preencher com IA: ${error.message}`);
             }
         }
 
@@ -100,6 +101,7 @@
             <button class="btn btn-primary me-2" id="add_key">Adicionar Nova Chave</button>
             <button class="btn btn-secondary me-2" id="settings-button">Configurações</button>
             <button class="btn btn-success me-2" id="save-translations">Exportar</button>
+            <button class="btn btn-warning me-2" id="translate-batch">Traduzir Lote</button> <!-- Novo botão -->
         </div>
     </div>
     <div class="table-responsive table-container">
@@ -162,6 +164,8 @@
     <script src="js/checkEmptyFields.js"></script>
     <script src="js/settingsHandler.js"></script>
     <script src="js/saveTranslations.js"></script>
+    <script src="js/translateHandler.js"></script>
+    <script src="js/eventHandlers.js"></script>
     <script>
         document.querySelectorAll('.ai-button').forEach(button => {
             button.addEventListener('click', async function() {
@@ -169,6 +173,38 @@
                 const referenceContent = document.getElementById('reference-content').value;
                 await translateRowEmptyFields(row, referenceContent);
             });
+        });
+
+        document.getElementById('translate-batch').addEventListener('click', async function() {
+            const rows = document.querySelectorAll('#translations-tbody tr');
+            let retry = true;
+            while (retry) {
+                try {
+                    let translatedCount = 0;
+                    for (const row of rows) {
+                        if (translatedCount >= 15) break;
+                        const inputs = row.querySelectorAll('input.verify_vazio');
+                        for (const input of inputs) {
+                            if (translatedCount >= 15) break;
+                            const referenceContent = row.querySelector(`input[data-language="${defaultLanguage}"]`).value;
+                            if (referenceContent && !input.value) {
+                                const language = input.getAttribute('data-language');
+                                await fillWithAI(input, referenceContent, language);
+                                translatedCount++;
+                            }
+                        }
+                    }
+                    if (translatedCount < 15) {
+                        retry = false; // Se menos de 15 itens foram traduzidos, significa que todos foram preenchidos
+                    }
+                } catch (error) {
+                    console.error(`Erro ao preencher com IA: ${error.message}`);
+                    for (let i = 60; i > 0; i--) {
+                        console.log(`Tentando novamente em ${i} segundos...`);
+                        await new Promise(resolve => setTimeout(resolve, 1000)); // Espera 1 segundo
+                    }
+                }
+            }
         });
     </script>
 </body>
