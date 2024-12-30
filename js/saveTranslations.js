@@ -1,5 +1,3 @@
-// Adicione esta linha no início do arquivo para importar a biblioteca JSZip
-
 document.getElementById('save-translations').addEventListener('click', async function() {
     const translations = {};
 
@@ -29,8 +27,6 @@ document.getElementById('save-translations').addEventListener('click', async fun
             });
         }
     });
-
-    localStorage.setItem('translations', JSON.stringify(translations));
 
     const zip = new JSZip();
     Object.keys(translations).forEach(language => {

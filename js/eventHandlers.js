@@ -1,7 +1,7 @@
 document.getElementById('add_key')?.addEventListener('click', function() {
     const key = prompt('Digite a nova chave:');
     if (key) {
-        const languages = Object.keys(translationsCache);
+        const languages = Array.from(document.querySelectorAll('th[data-language]')).map(th => th.getAttribute('data-language'));
         const row = document.createElement('tr');
         row.id = `row-${key}`; // Adiciona um ID à linha
         const keyCell = document.createElement('td');
@@ -23,7 +23,7 @@ document.getElementById('add_key')?.addEventListener('click', function() {
                 openEditModal(input);
             });
             input.addEventListener('input', function() {
-                updateTranslationPercentage(language, translationsCache);
+                updateTranslationPercentage(language);
             });
 
             if (!input.value) {
@@ -41,7 +41,7 @@ document.getElementById('add_key')?.addEventListener('click', function() {
         deleteButton.addEventListener('click', function() {
             row.remove();
             languages.forEach(language => {
-                updateTranslationPercentage(language, translationsCache);
+                updateTranslationPercentage(language);
             });
         });
         actionsCell.appendChild(deleteButton);
@@ -55,7 +55,7 @@ document.getElementById('add_key')?.addEventListener('click', function() {
         fillButton.addEventListener('click', async function() {
             await fillWithAI(input, key, language);
         });
-
+        checkEmptyFields()
         fillCell.appendChild(fillButton);
         row.appendChild(fillCell);
 
@@ -68,7 +68,7 @@ document.getElementById('add_key')?.addEventListener('click', function() {
 
         // Atualiza a porcentagem de todas as linguagens
         languages.forEach(language => {
-            updateTranslationPercentage(language, translationsCache);
+            updateTranslationPercentage(language);
         });
     }
 });

@@ -7,25 +7,31 @@ function openEditModal(input) {
 
     const language = input.getAttribute('data-language');
     const key = input.closest('tr').querySelector('.key-cell').textContent;
-
+    
     referenceLanguageDisplay.textContent = defaultLanguage;
     currentLanguageDisplay.textContent = language;
 
     const keys = key.split('.');
-    let referenceValue = translationsCache[defaultLanguage];
-    keys.forEach(k => {
-        if (referenceValue) referenceValue = referenceValue[k];
-    });
+    let referenceValue = getNestedValue(translations[defaultLanguage] || {}, keys); // Garante que translations[defaultLanguage] esteja definido
+
+    if (!translations[defaultLanguage]) {
+        console.error(`translations[${defaultLanguage}] está indefinido`);
+    }
+
+    console.log('defaultLanguage:', defaultLanguage);
+    console.log('translations[defaultLanguage]:', translations[defaultLanguage]);
+    console.log('keys:', keys);
+    console.log('referenceValue:', referenceValue);
 
     referenceContent.value = referenceValue || '';
     editInput.value = input.value;
 
     modal.style.display = 'block';
 
-    document.getElementById('save-edit').onclick = function() {
+    document.getElementById('save-edit').onclick = function() { 
         input.value = editInput.value;
-        updateTranslationPercentage(language, translationsCache);
-        checkEmptyFields()
+        updateTranslationPercentage(language);
+        checkEmptyFields();
         modal.style.display = 'none';
     };
 

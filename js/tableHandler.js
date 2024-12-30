@@ -1,47 +1,41 @@
-let defaultLanguage = null; // Adiciona uma variável para armazenar o idioma padrão
+let defaultLanguage = null;
 
-function loadTranslations(translationsCache, container) {
-    container.innerHTML = ''; // Limpa as traduções atuais
+function loadTranslations(translations, container) {
+    container.innerHTML = '';
     const searchBar = document.getElementById('search-bar');
-    if (searchBar) {
-        searchBar.addEventListener('input', function() {
-            filterTable(this.value);
-        });
-    }
+    searchBar?.addEventListener('input', function() {
+        filterTable(this.value);
+    });
 
-    // Cria a tabela de traduções
     const table = document.createElement('table');
-    table.id = 'translations-table'; // Adiciona um ID à tabela
+    table.id = 'translations-table';
     const thead = document.createElement('thead');
     const tbody = document.createElement('tbody');
-    tbody.id = 'translations-tbody'; // Adiciona um ID ao tbody
+    tbody.id = 'translations-tbody';
 
-    // Cria o cabeçalho da tabela
     const headerRow = document.createElement('tr');
     const keyHeader = document.createElement('th');
     keyHeader.textContent = 'Chave';
     headerRow.appendChild(keyHeader);
 
-    const languages = Object.keys(translationsCache);
-    let referenceLanguage = languages[0]; // Assume o primeiro idioma como referência
+    const languages = Object.keys(translations);
+    let referenceLanguage = languages[0];
 
-    // Encontra o idioma com mais campos preenchidos
     let maxFilledKeys = 0;
     languages.forEach(language => {
-        const filledKeys = countFilledKeys(translationsCache[language]);
+        const filledKeys = countFilledKeys(translations[language]);
         if (filledKeys > maxFilledKeys) {
             maxFilledKeys = filledKeys;
             referenceLanguage = language;
         }
     });
 
-    defaultLanguage = referenceLanguage; // Define o idioma mais preenchido como padrão
-
-    const totalKeys = countKeys(translationsCache[referenceLanguage]);
+    defaultLanguage = referenceLanguage;
+    const totalKeys = countKeys(translations[referenceLanguage]);
 
     languages.forEach(language => {
         const languageHeader = document.createElement('th');
-        const filledKeys = countFilledKeys(translationsCache[language]);
+        const filledKeys = countFilledKeys(translations[language]);
         const percentage = ((filledKeys / totalKeys) * 100).toFixed(2);
         languageHeader.textContent = `${language} (${percentage}%)`;
         languageHeader.setAttribute('data-language', language);
@@ -59,7 +53,6 @@ function loadTranslations(translationsCache, container) {
     thead.appendChild(headerRow);
     table.appendChild(thead);
 
-    // Cria as linhas da tabela
     const keys = new Set();
     languages.forEach(language => {
         function collectKeys(obj, parentKey = '') {
@@ -74,15 +67,15 @@ function loadTranslations(translationsCache, container) {
                 }
             }
         }
-        collectKeys(translationsCache[language]);
+        collectKeys(translations[language]);
     });
 
     keys.forEach(key => {
         const row = document.createElement('tr');
-        row.id = `row-${key}`; // Adiciona um ID à linha
+        row.id = `row-${key}`;
         const keyCell = document.createElement('td');
         keyCell.textContent = key;
-        keyCell.classList.add('key-cell'); // Adiciona a classe key-cell
+        keyCell.classList.add('key-cell');
         row.appendChild(keyCell);
 
         let hasEmptyField = false;
@@ -91,12 +84,12 @@ function loadTranslations(translationsCache, container) {
             const valueCell = document.createElement('td');
             const input = document.createElement('input');
             input.type = 'text';
-            input.classList.add('expand-input', 'verify_vazio'); // Adiciona a classe verify_vazio
-            input.setAttribute('data-language', language); // Adiciona o atributo data-language
-            input.setAttribute('readonly', true); // Bloqueia a edição direta
+            input.classList.add('expand-input', 'verify_vazio');
+            input.setAttribute('data-language', language);
+            input.setAttribute('readonly', true);
 
             const keys = key.split('.');
-            let value = translationsCache[language];
+            let value = translations[language];
             keys.forEach(k => {
                 if (value) value = value[k];
             });
@@ -110,7 +103,7 @@ function loadTranslations(translationsCache, container) {
                 openEditModal(input);
             });
             input.addEventListener('input', function() {
-                updateTranslationPercentage(language, translationsCache);
+                updateTranslationPercentage(language);
             });
 
             valueCell.appendChild(input);
@@ -120,11 +113,11 @@ function loadTranslations(translationsCache, container) {
         const actionsCell = document.createElement('td');
         const deleteButton = document.createElement('button');
         deleteButton.textContent = 'Deletar';
-        deleteButton.classList.add('btn', 'btn-danger'); // Adiciona as classes btn e btn-primary
+        deleteButton.classList.add('btn', 'btn-danger');
         deleteButton.addEventListener('click', function() {
             row.remove();
             languages.forEach(language => {
-                updateTranslationPercentage(language, translationsCache);
+                updateTranslationPercentage(language);
             });
         });
         actionsCell.appendChild(deleteButton);
@@ -133,11 +126,11 @@ function loadTranslations(translationsCache, container) {
         const fillCell = document.createElement('td');
         const fillButton = document.createElement('button');
         fillButton.textContent = 'IA';
-        fillButton.classList.add('btn', 'btn-primary', 'ml-2', 'ai-button'); // Adiciona as classes btn, btn-primary, ml-2 e ai-button
-        fillButton.disabled = false; // Sempre ativa o botão
+        fillButton.classList.add('btn', 'btn-primary', 'ml-2', 'ai-button');
+        fillButton.disabled = false;
         fillButton.addEventListener('click', async function() {
             const keys = key.split('.');
-            let referenceContent = translationsCache[referenceLanguage];
+            let referenceContent = translations[referenceLanguage];
             keys.forEach(k => {
                 if (referenceContent) referenceContent = referenceContent[k];
             });
@@ -159,9 +152,8 @@ function loadTranslations(translationsCache, container) {
     table.appendChild(tbody);
     container.appendChild(table);
 
-    // Atualiza a porcentagem de todas as linguagens
     languages.forEach(language => {
-        updateTranslationPercentage(language, translationsCache);
+        updateTranslationPercentage(language);
     });
 }
 
@@ -199,7 +191,7 @@ function countFilledKeys(obj) {
     return count;
 }
 
-function updateTranslationPercentage(language, translationsCache) {
+function updateTranslationPercentage(language) {
     const inputs = document.querySelectorAll(`input[data-language="${language}"]`);
     const totalKeys = inputs.length;
     let filledKeys = 0;
@@ -231,8 +223,7 @@ function filterTable(searchTerm) {
 
 function clearProject() {
     const tbody = document.getElementById('translations-tbody');
-    tbody.innerHTML = ''; // Remove todas as linhas da tabela
-    translationsCache = {}; // Limpa o cache de traduções
-    updateTranslationPercentage(); // Atualiza as porcentagens
+    tbody.innerHTML = '';
+    updateTranslationPercentage();
 }
 

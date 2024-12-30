@@ -24,15 +24,14 @@
 
         let API_KEY = localStorage.getItem('api-token') || "...";
         let genAI = new GoogleGenerativeAI(API_KEY);
+        let model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-        function initializeGenAI() {
-            genAI = new GoogleGenerativeAI(API_KEY);
+
+        function initializeGenAI(apiKey) {
+            genAI = new GoogleGenerativeAI(apiKey);
+            model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
         }
 
-        // The Gemini 1.5 models are versatile and work with most use cases
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-
-        // Function to fill with AI
         async function fillWithAI(input, referenceContent, language) {
             try {
                 const chatSession = model.startChat({
@@ -46,29 +45,68 @@
                     history: [],
                 });
 
-                const result = await chatSession.sendMessage(`Translate the following content into ${language}: '${referenceContent}'. Ensure that placeholders like <%>, %user%, %target%, or similar remain completely unchanged and are not translated or modified. Adapt the surrounding text to fit the context naturally while keeping the placeholders intact. If emojis or special characters are present, retain them as is. Return only the translated string.`)
+                const result = await chatSession.sendMessage(`Translate the following content into ${language}: '${referenceContent}'. Ensure that placeholders like <%>, %user%, %target%, or similar remain completely unchanged and are not translated or modified. Adapt the surrounding text to fit the context naturally while keeping the placeholders intact. If emojis or special characters are present, retain them as is. Return only the translated string.`);
                 input.value = result.response.text();
-                updateTranslationPercentage(language, translationsCache);
+                updateTranslationPercentage(language);
                 checkEmptyFields();
             } catch (error) {
                 console.error(`Erro ao preencher com IA: ${error.message}`);
-                throw new Error(`Erro ao preencher com IA: ${error.message}`);
+                throw error;
             }
         }
 
-        // Function to translate all empty fields in a row
+        
+        async function fillWithAIList(referenceContents, language) {
+            try {
+                const chatSession = model.startChat({
+                    generationConfig: {
+                        temperature: 1,
+                        topP: 0.95,
+                        topK: 64,
+                        maxOutputTokens: 8192,
+                        responseMimeType: "text/plain",
+                    },
+                    history: [],
+                });
+
+                const prompt = `Translate the following contents into ${language}. Ensure that placeholders like <%>, %user%, %target%, or similar remain completely unchanged and are not translated or modified. Adapt the surrounding text to fit the context naturally while keeping the placeholders intact. If emojis or special characters are present, retain them as is. Return the translated strings as a JSON array.\n\n${JSON.stringify(referenceContents)}`;
+
+                const result = await chatSession.sendMessage(prompt);
+                const translatedText = result.response.text();
+                const translations = JSON.parse(translatedText.replace(/```json|```/g, '').trim());
+                updateTranslationPercentage(language);
+                return translations;
+            } catch (error) {
+                console.log(`Erro ao preencher com IA: ${error.message}`);
+                return [];
+            }
+        }
+
         async function translateRowEmptyFields(row, referenceContent) {
             const inputs = row.querySelectorAll('input.verify_vazio');
+            const batch = [];
+            const batchInputs = [];
+
             for (const input of inputs) {
                 if (!input.value) {
                     const language = input.getAttribute('data-language');
-                    await fillWithAI(input, referenceContent, language);
+                    batch.push(referenceContent);
+                    batchInputs.push(input);
                 }
+            }
+
+            if (batch.length > 0) {
+                const translations = await fillWithAIList(batch, batchInputs[0].getAttribute('data-language'));
+                translations.forEach((translation, index) => {
+                    if (batchInputs[index]) {
+                        batchInputs[index].value = translation;
+                    }
+                });
             }
         }
 
-        // Export the functions to be used in tableHandler.js
         window.fillWithAI = fillWithAI;
+        window.fillWithAIList = fillWithAIList;
         window.initializeGenAI = initializeGenAI;
         window.translateRowEmptyFields = translateRowEmptyFields;
 
@@ -76,10 +114,10 @@
             let apiTokenInput = document.getElementById('api-token');
             API_KEY = apiTokenInput.value;
             localStorage.setItem('api-token', API_KEY);
-            initializeGenAI();
+            initializeGenAI(API_KEY);
+            console.log('Configurações salvas com sucesso!');
         });
 
-        // Limpa os dados salvos no navegador ao carregar a página, exceto a chave de API
         let apiToken = localStorage.getItem('api-token');
         localStorage.clear();
         if (apiToken) {
@@ -158,8 +196,6 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-primary" id="save-settings">Salvar Configurações</button>
-                    <button type="button" class="btn btn-danger" id="end-session">Finalizar Sessão</button>
-                    <button type="button" class="btn btn-warning" id="clear-project">Limpar Projeto</button> <!-- Novo botão -->
                 </div>
             </div>
         </div>
@@ -167,61 +203,83 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
     <script src="js/fileHandler.js"></script>
-    <script src="js/modalHandler.js"></script>
     <script src="js/tableHandler.js"></script>
     <script src="js/checkEmptyFields.js"></script>
     <script src="js/settingsHandler.js"></script>
     <script src="js/saveTranslations.js"></script>
-    <script src="js/translateHandler.js"></script>
     <script src="js/eventHandlers.js"></script>
+    <script src="js/modalHandler.js"></script>
     <script>
-        document.querySelectorAll('.ai-button').forEach(button => {
-            button.addEventListener('click', async function() {
-                const row = this.closest('tr');
-                const referenceContent = document.getElementById('reference-content').value;
-                await translateRowEmptyFields(row, referenceContent);
-            });
-        });
+document.getElementById('translate-batch').addEventListener('click', async function() {
+    const rows = document.querySelectorAll('#translations-tbody tr');
+    let allFilled = false;
 
-        document.getElementById('translate-batch').addEventListener('click', async function() {
-            const rows = document.querySelectorAll('#translations-tbody tr');
-            let retry = true;
-            while (retry) {
-                try {
-                    let translatedCount = 0;
-                    for (const row of rows) {
-                        if (translatedCount >= 15) break;
-                        const inputs = row.querySelectorAll('input.verify_vazio');
-                        for (const input of inputs) {
-                            if (translatedCount >= 15) break;
-                            const referenceContent = row.querySelector(`input[data-language="${defaultLanguage}"]`).value;
-                            if (referenceContent && !input.value) {
-                                const language = input.getAttribute('data-language');
-                                await fillWithAI(input, referenceContent, language);
-                                translatedCount++;
-                            }
+    while (!allFilled) {
+        let translatedCount = 0;
+        let batch = {};
+        let batchInputs = {};
+
+        for (const row of rows) {
+            const inputs = row.querySelectorAll('input.verify_vazio');
+            for (const input of inputs) {
+                const referenceContent = row.querySelector(`input[data-language="${defaultLanguage}"]`).value;
+                if (referenceContent && !input.value) {
+                    const language = input.getAttribute('data-language');
+                    if (!batch[language]) {
+                        batch[language] = [];
+                        batchInputs[language] = [];
+                    }
+                    batch[language].push(referenceContent);
+                    batchInputs[language].push(input);
+
+                    if (batch[language].length === 30) {
+                        try {
+                            const translations = await fillWithAIList(batch[language], language);
+                            translations.forEach((translation, index) => {
+                                if (batchInputs[language][index]) {
+                                    batchInputs[language][index].value = translation;
+                                }
+                            });
+                            checkEmptyFields();
+                            updateTranslationPercentage(language);
+                        } catch (error) {
+                            console.error(`Erro ao preencher com IA: ${error.message}`);
+                            console.log('Esperando 60 segundos antes de tentar novamente...');
+                            await new Promise(resolve => setTimeout(resolve, 60000)); // Espera 60 segundos
                         }
-                    }
-                    if (translatedCount < 15) {
-                        retry = false; // Se menos de 15 itens foram traduzidos, significa que todos foram preenchidos
-                    }
-                } catch (error) {
-                    console.error(`Erro ao preencher com IA: ${error.message}`);
-                    for (let i = 60; i > 0; i--) {
-                        console.log(`Tentando novamente em ${i} segundos...`);
-                        await new Promise(resolve => setTimeout(resolve, 1000)); // Espera 1 segundo
+                        translatedCount += batch[language].length;
+                        batch[language] = [];
+                        batchInputs[language] = [];
+                        await new Promise(resolve => setTimeout(resolve, 4000)); // Adiciona um atraso de 4.5 segundos entre os requests
                     }
                 }
             }
-        });
+        }
 
-        document.getElementById('clear-project').addEventListener('click', function() {
-            if (confirm('Tem certeza de que deseja limpar o projeto? Isso apagará todos os dados.')) {
-                clearProject();
-                localStorage.clear();
-                location.reload();
+        // Processa o restante do batch se houver menos de 25 itens
+        for (const language in batch) {
+            if (batch[language].length > 0) {
+                try {
+                    const translations = await fillWithAIList(batch[language], language);
+                    translations.forEach((translation, index) => {
+                        if (batchInputs[language][index]) {
+                            batchInputs[language][index].value = translation;
+                        }
+                    });
+                    checkEmptyFields();
+                    updateTranslationPercentage(language);
+                } catch (error) {
+                    console.error(`Erro ao preencher com IA: ${error.message}`);
+                    console.log('Esperando 60 segundos antes de tentar novamente...');
+                    await new Promise(resolve => setTimeout(resolve, 60000)); // Espera 60 segundos
+                }
+                translatedCount += batch[language].length;
             }
-        });
+        }
+
+        allFilled = translatedCount === 0; // Se nenhum campo foi traduzido, todos estão preenchidos
+    }
+});
     </script>
 </body>
 </html>

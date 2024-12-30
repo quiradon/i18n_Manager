@@ -1,4 +1,4 @@
-const translationsCache = {}; // Defina a variável translationsCache aqui
+let translations = {}; // Definindo translations no escopo global
 
 document.querySelector('#idiomas_input').addEventListener('change', function() {
     const fileInputs = document.querySelectorAll('#idiomas_input');
@@ -25,18 +25,42 @@ document.querySelector('#idiomas_input').addEventListener('change', function() {
             try {
                 const jsonData = JSON.parse(e.target.result);
                 const language = file.name.split('.')[0]; // Assume que o nome do arquivo é o código do idioma
-                translationsCache[language] = jsonData;
+                translations[language] = jsonData;
                 filesProcessed++;
 
                 if (filesProcessed === files.length) {
-                    loadTranslations(translationsCache, document.getElementById('translations-container'));
-                    document.getElementById('translations-section').style.display = 'block';
-                    checkEmptyFields(); // Verificar campos vazios automaticamente
+                    processTranslations(translations);
                 }
             } catch (error) {
-                console.error(error);
+                console.error(`Erro ao processar o arquivo ${file.name}: ${error.message}`);
             }
         };
         reader.readAsText(file);
     });
 });
+
+function processTranslations(translations) {
+    let referenceLanguage = Object.keys(translations)[0];
+    let maxFilledKeys = 0;
+
+    Object.keys(translations).forEach(language => {
+        const filledKeys = countFilledKeys(translations[language]);
+        if (filledKeys > maxFilledKeys) {
+            maxFilledKeys = filledKeys;
+            referenceLanguage = language;
+        }
+    });
+
+    // Reordenar as traduções para garantir que o idioma de referência seja o primeiro
+    const orderedTranslations = {};
+    orderedTranslations[referenceLanguage] = translations[referenceLanguage];
+    Object.keys(translations).forEach(language => {
+        if (language !== referenceLanguage) {
+            orderedTranslations[language] = translations[language];
+        }
+    });
+
+    loadTranslations(orderedTranslations, document.getElementById('translations-container'));
+    document.getElementById('translations-section').style.display = 'block';
+    checkEmptyFields(); // Verificar campos vazios automaticamente
+}
