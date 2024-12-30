@@ -1,5 +1,4 @@
 let defaultLanguage = 'en';
-let referenceLanguage = localStorage.getItem('reference-language') || 'en'; // Defina a linguagem de referência para inglês
 
 function loadTranslations(translations, container) {
     container.innerHTML = '';
@@ -21,20 +20,7 @@ function loadTranslations(translations, container) {
 
     const languages = Object.keys(translations);
 
-    let maxFilledKeys = 0;
-    languages.forEach(language => {
-        const filledKeys = countFilledKeys(translations[language]);
-        if (filledKeys > maxFilledKeys) {
-            maxFilledKeys = filledKeys;
-            if (!localStorage.getItem('reference-language')) {
-                referenceLanguage = language;
-            }
-        }
-    });
-
-    defaultLanguage = 'en';
-    referenceLanguage = localStorage.getItem('reference-language') || 'en';
-    const totalKeys = countKeys(translations[referenceLanguage]);
+    const totalKeys = countKeys(translations[defaultLanguage]);
 
     languages.forEach(language => {
         const languageHeader = document.createElement('th');
@@ -133,7 +119,7 @@ function loadTranslations(translations, container) {
         fillButton.disabled = false;
         fillButton.addEventListener('click', async function() {
             const keys = key.split('.');
-            let referenceContent = translations[referenceLanguage];
+            let referenceContent = translations[defaultLanguage];
             keys.forEach(k => {
                 if (referenceContent) referenceContent = referenceContent[k];
             });

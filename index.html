@@ -47,7 +47,7 @@
                     history: [],
                 });
 
-                const result = await chatSession.sendMessage(`Translate the following content into ${language}: '${referenceContent}'. Ensure that placeholders like <%>, %user%, %target%, or similar remain completely unchanged and are not translated or modified. Adapt the surrounding text to fit the context naturally while keeping the placeholders intact. If emojis or special characters are present, retain them as is. Return only the translated string.`);
+                const result = await chatSession.sendMessage(`Translate the following content into ${language}: '${referenceContent}'. Ensure that placeholders like <%>, %user%, %target%, or similar remain completely unchanged and are not translated or modified. Adapt the surrounding text to fit the context naturally while keeping the placeholders intact. If emojis or special characters are present, retain them as is. preserve markdown and formatation, Return only the translated string.`);
                 input.value = result.response.text();
                 updateTranslationPercentage(language);
                 checkEmptyFields();
@@ -71,7 +71,7 @@
                     history: [],
                 });
 
-                const prompt = `Translate the following contents into ${language}. Ensure that placeholders like <%>, %user%, %target%, or similar remain completely unchanged and are not translated or modified. Adapt the surrounding text to fit the context naturally while keeping the placeholders intact. If emojis or special characters are present, retain them as is. Return the translated strings as a JSON array.\n\n${JSON.stringify(referenceContents)}`;
+                const prompt = `Translate the following contents into ${language}. Ensure that placeholders like <%>, %user%, %target%, or similar remain completely unchanged and are not translated or modified. Adapt the surrounding text to fit the context naturally while keeping the placeholders intact. If emojis or special characters are present, preserve markdown and formatation, retain them as is. Return the translated strings as a JSON array.\n\n${JSON.stringify(referenceContents)}`;
 
                 const result = await chatSession.sendMessage(prompt);
                 const translatedText = result.response.text();
