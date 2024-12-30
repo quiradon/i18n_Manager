@@ -152,6 +152,7 @@
                 <div class="modal-footer">
                     <button type="button" class="btn btn-primary" id="save-settings">Salvar Configurações</button>
                     <button type="button" class="btn btn-danger" id="end-session">Finalizar Sessão</button>
+                    <button type="button" class="btn btn-warning" id="clear-project">Limpar Projeto</button> <!-- Novo botão -->
                 </div>
             </div>
         </div>
@@ -204,6 +205,14 @@
                         await new Promise(resolve => setTimeout(resolve, 1000)); // Espera 1 segundo
                     }
                 }
+            }
+        });
+
+        document.getElementById('clear-project').addEventListener('click', function() {
+            if (confirm('Tem certeza de que deseja limpar o projeto? Isso apagará todos os dados.')) {
+                clearProject();
+                localStorage.clear();
+                location.reload();
             }
         });
     </script>

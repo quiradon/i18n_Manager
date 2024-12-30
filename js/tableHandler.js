@@ -229,3 +229,10 @@ function filterTable(searchTerm) {
     });
 }
 
+function clearProject() {
+    const tbody = document.getElementById('translations-tbody');
+    tbody.innerHTML = ''; // Remove todas as linhas da tabela
+    translationsCache = {}; // Limpa o cache de traduções
+    updateTranslationPercentage(); // Atualiza as porcentagens
+}
+
