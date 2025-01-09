@@ -18,14 +18,6 @@ window.addEventListener('DOMContentLoaded', (event) => {
 
     if (batchTranslateButton) {
         batchTranslateButton.addEventListener('click', () => {
-            batchTranslate();
-            updateHighlight();
-            updateProgress();
-        });
-    }
-
-    if (batchTranslateButton) {
-        batchTranslateButton.addEventListener('click', () => {
             batchTranslateEmptyFields();
         });
     }
@@ -105,7 +97,7 @@ window.addEventListener('DOMContentLoaded', (event) => {
 
             return `<tr class="translation-row">
                       <td>
-                        <input type="text" value="${key}" class="key-input" data-key="${key}" style="width: ${key.length + 2}ch;">
+                        <span class="key-text" data-key="${key}" style="width: ${key.length + 2}ch;">${key}</span>
                         <button class="delete-key-btn" data-key="${key}">🗑️</button>
                       </td>
                       ${cells}
@@ -120,9 +112,9 @@ window.addEventListener('DOMContentLoaded', (event) => {
     function filterTranslations(query, type) {
         const rows = document.querySelectorAll('.translation-row');
         rows.forEach(row => {
-            const keyInput = row.querySelector('.key-input');
-            if (!keyInput) return;
-            const key = keyInput.value.toLowerCase();
+            const keyText = row.querySelector('.key-text');
+            if (!keyText) return;
+            const key = keyText.textContent.toLowerCase();
             const cells = Array.from(row.querySelectorAll('textarea')).map(cell => cell.value.toLowerCase());
             const matches = type === 'keys' ? key.includes(query) : cells.some(cell => cell.includes(query));
 
@@ -180,14 +172,6 @@ window.addEventListener('DOMContentLoaded', (event) => {
             textarea.dispatchEvent(new Event('input'));
         });
 
-        document.querySelectorAll('.key-input').forEach(input => {
-            input.addEventListener('blur', function() { // Atualiza quando o input for deselecionado
-                if (this && this.dataset && this.dataset.key) {
-                    updateKey(this.dataset.key, this.value);
-                }
-            });
-        });
-
         document.querySelectorAll('.delete-key-btn').forEach(button => {
             button.addEventListener('click', function() {
                 if (this && this.dataset && this.dataset.key) {
@@ -201,7 +185,6 @@ window.addEventListener('DOMContentLoaded', (event) => {
                 if (this && this.dataset && this.dataset.key && this.dataset.language) {
                     const key = this.dataset.key;
                     const language = this.dataset.language;
-                    const referenceLanguage = 'en'; // Defina o idioma de referência aqui
                     const referenceText = document.querySelector(`textarea[data-key="${CSS.escape(key)}"][data-language="${CSS.escape(referenceLanguage)}"]`).value;
                     vscode.postMessage({
                         command: 'translateAI',
@@ -217,9 +200,9 @@ window.addEventListener('DOMContentLoaded', (event) => {
     function collectTranslations() {
         const translations = {};
         document.querySelectorAll('.translation-row').forEach(row => {
-            const keyInput = row.querySelector('.key-input');
-            if (!keyInput) return;
-            const key = keyInput.value;
+            const keyText = row.querySelector('.key-text');
+            if (!keyText) return;
+            const key = keyText.textContent;
             row.querySelectorAll('textarea').forEach(textarea => {
                 const language = textarea.dataset.language;
                 const value = textarea.value;
@@ -249,10 +232,6 @@ window.addEventListener('DOMContentLoaded', (event) => {
         updateTranslations(translations);
     }
 
-    function batchTranslate() {
-        // Implementar lógica de tradução em lote
-    }
-
     async function batchTranslateEmptyFields() {
         const translations = collectTranslations();
         const emptyFields = [];
@@ -280,21 +259,18 @@ window.addEventListener('DOMContentLoaded', (event) => {
                     batchTranslations[field.key] = referenceText;
                 });
 
-                vscode.postMessage({
-                    command: 'batchTranslateAI',
-                    batch: batchTranslations,
-                    language: language
-                });
-
-                await new Promise(resolve => setTimeout(resolve, 10000)); // Espera 10 segundos
+                try {
+                    vscode.postMessage({
+                        command: 'batchTranslateAI',
+                        batch: batchTranslations,
+                        language: language
+                    });
+                    await new Promise(resolve => setTimeout(resolve, 10000)); // Espera 10 segundos
+                } catch (error) {
+                    console.error('Error in batch translation:', error);
+                }
             }
         }
-    }
-
-    function updateKey(oldKey, newKey) {
-        const translations = collectTranslations();
-        updateKeyInTranslations(translations, oldKey, newKey);
-        updateTranslations(translations);
     }
 
     function updateTranslation(key, language, value) {
@@ -329,32 +305,6 @@ window.addEventListener('DOMContentLoaded', (event) => {
                 current = current[keys[i]];
             }
             current[keys[keys.length - 1]] = ''; // Sempre gera em branco
-        });
-    }
-
-    function updateKeyInTranslations(translations, oldKey, newKey) {
-        const languages = Object.keys(translations);
-        languages.forEach(language => {
-            const keys = oldKey.split('.');
-            let current = translations[language];
-            for (let i = 0; i < keys.length - 1; i++) {
-                if (!current[keys[i]]) {
-                    return;
-                }
-                current = current[keys[i]];
-            }
-            const value = current[keys[keys.length - 1]];
-            delete current[keys[keys.length - 1]];
-
-            const newKeys = newKey.split('.');
-            current = translations[language];
-            for (let i = 0; i < newKeys.length - 1; i++) {
-                if (!current[newKeys[i]]) {
-                    current[newKeys[i]] = {};
-                }
-                current = current[newKeys[i]];
-            }
-            current[newKeys[newKeys.length - 1]] = value;
         });
     }
 
