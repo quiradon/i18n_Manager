@@ -359,9 +359,6 @@ window.addEventListener('DOMContentLoaded', (event) => {
     function openQuickAddModal() {
         const modal = document.createElement('div');
         modal.classList.add('modal');
-        const languageOptions = Object.keys(translations).map(language => `<option value="${language}">${language}</option>`).join('');
-        console.log(translations)
-        console.log(languageOptions)
         modal.innerHTML = `
             <div class="modal-content">
                 <span class="close-btn">&times;</span>
@@ -370,10 +367,6 @@ window.addEventListener('DOMContentLoaded', (event) => {
                 <input type="text" id="quick-add-key" />
                 <label for="quick-add-text">Texto:</label>
                 <input type="text" id="quick-add-text" />
-                <label for="quick-add-language">Idioma Base:</label>
-                <select id="quick-add-language">
-                    ${languageOptions}
-                </select>
                 <button id="quick-add-submit">Adicionar</button>
             </div>
         `;
@@ -388,14 +381,13 @@ window.addEventListener('DOMContentLoaded', (event) => {
         submitBtn.addEventListener('click', () => {
             const key = document.getElementById('quick-add-key').value;
             const text = document.getElementById('quick-add-text').value;
-            const language = document.getElementById('quick-add-language').value;
 
-            if (key && text && language) {
+            if (key && text) {
                 vscode.postMessage({
                     command: 'quickAdd',
                     key: key,
                     text: text,
-                    language: language
+                    language: referenceLanguage
                 });
                 modal.remove();
             } else {
@@ -405,8 +397,6 @@ window.addEventListener('DOMContentLoaded', (event) => {
     }
 
     function getReferenceText(key) {
-        console.log(key)
-        console.log(referenceLanguage)
         const referenceTextarea = document.querySelector(`textarea[data-key="${key}"][data-language="${referenceLanguage}"]`);
         if (referenceTextarea) {
             return referenceTextarea.value;
@@ -415,6 +405,5 @@ window.addEventListener('DOMContentLoaded', (event) => {
             return '';
         }
     }
-
     attachEventListeners();
 });

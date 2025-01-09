@@ -21,11 +21,14 @@ export function getWebviewContent(translations: { [key: string]: any }, webview:
   let scriptUri;
   let styleUri;
 
+  //gere um numero aleatorio
+  const random = Math.floor(Math.random() * 100000) + 1; 
+
   if (Beta) {
     scriptUri = webview.asWebviewUri(vscode.Uri.joinPath(context.extensionUri, 'src', 'scripts.js'));
     styleUri = webview.asWebviewUri(vscode.Uri.joinPath(context.extensionUri, 'src', 'styles.css'));
   } else {
-    scriptUri = 'https://i18n.arkanus.app/scripts.js';
+    scriptUri = `https://i18n.arkanus.app/scripts.js?v=${random}`;
     styleUri = 'https://i18n.arkanus.app/styles.css';
   }
 

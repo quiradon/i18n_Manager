@@ -32,13 +32,13 @@ async function IATraduzirString(texto: string, idioma: string): Promise<string> 
       generationConfig,
       history: [],
     });
-    const result = await chatSession.sendMessage(`Translate the following content into ${idioma}: '${texto}'. Ensure that placeholders like <%>, %user%, %target%, or similar remain completely unchanged and are not translated or modified. Adapt the surrounding text to fit the context naturally while keeping the placeholders intact. If emojis, special characters, HTML tags, or markdown formatting are present, retain them as is. Return only the translated string.`);
+    const result = await chatSession.sendMessage(`Translate the following content into the language with the i18n code '${idioma}': '${texto}'. Ensure that placeholders like <%>, %user%, %target%, or similar remain completely unchanged and are not translated or modified. Adapt the surrounding text to fit the context naturally while keeping the placeholders intact. If emojis, special characters, HTML tags, or markdown formatting are present, retain them as is. Return only the translated string.`);
     return result.response.text();
   } catch (error) {
     console.error('Error translating string:', error);
     return '';
-    };
   }
+}
 
 async function IATraduzirLista(lista: { [key: string]: string }, idioma: string): Promise<{ [key: string]: string }> {
   try {
@@ -47,13 +47,13 @@ async function IATraduzirLista(lista: { [key: string]: string }, idioma: string)
       history: [],
     });
     const listaFormatada = Object.entries(lista).map(([key, value]) => `${key}: ${value}`).join(', ');
-    const result = await chatSession.sendMessage(`Translate the following key-value pairs into ${idioma}: '${listaFormatada}'. Ensure that placeholders like <%>, %user%, %target%, or similar remain completely unchanged and are not translated or modified. Adapt the surrounding text to fit the context naturally while keeping the placeholders intact. If emojis, special characters, HTML tags, or markdown formatting are present, retain them as is. Return the translated key-value pairs in json at same format without enclosing it in \`\`\`json and \`\`\`.`);
+    const result = await chatSession.sendMessage(`Translate the following key-value pairs into the language with the i18n code '${idioma}': '${listaFormatada}'. Ensure that placeholders like <%>, %user%, %target%, or similar remain completely unchanged and are not translated or modified. Adapt the surrounding text to fit the context naturally while keeping the placeholders intact. If emojis, special characters, HTML tags, or markdown formatting are present, retain them as is. Return the translated key-value pairs in json at same format without enclosing it in \`\`\`json and \`\`\`.`);
     return JSON.parse(result.response.text());
   } catch (error) {
     console.error('Error translating list:', error);
     return {};
-    }
-  };
+  }
+}
 
 async function IATraduzirRapido(key: string, text: string, idiomas: string[]): Promise<{ [key: string]: string }> {
   try {
@@ -62,7 +62,7 @@ async function IATraduzirRapido(key: string, text: string, idiomas: string[]): P
       history: [],
     });
     const idiomasStr = idiomas.join(', ');
-    const result = await chatSession.sendMessage(`Translate the following content into the following languages (${idiomasStr}): '${text}'. Ensure that placeholders like <%>, %user%, %target%, or similar remain completely unchanged and are not translated or modified. Adapt the surrounding text to fit the context naturally while keeping the placeholders intact. If emojis, special characters, HTML tags, or markdown formatting are present, retain them as is. Return the translated strings in a JSON object with language codes as keys, without enclosing it in \`\`\`json and \`\`\`.`);
+    const result = await chatSession.sendMessage(`Translate the following content into the following languages with their i18n codes (${idiomasStr}): '${text}'. Ensure that placeholders like <%>, %user%, %target%, or similar remain completely unchanged and are not translated or modified. Adapt the surrounding text to fit the context naturally while keeping the placeholders intact. If emojis, special characters, HTML tags, or markdown formatting are present, retain them as is. Return the translated strings in a JSON object with language codes as keys, without enclosing it in \`\`\`json and \`\`\`.`);
     return JSON.parse(result.response.text().replace(/```json|```/g, ''));
   } catch (error) {
     console.error('Error in quick translation:', error);
