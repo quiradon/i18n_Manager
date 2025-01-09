@@ -6,12 +6,15 @@ window.addEventListener('DOMContentLoaded', (event) => {
     const searchType = document.getElementById('search-type');
     const batchTranslateButton = document.getElementById('batch-translate-ai-btn');
     const hiddenTranslationsInput = document.getElementById('hidden-translations-input'); // Novo input oculto
+    const hiddenReferenceLanguageInput = document.getElementById('hidden-reference-language'); // Novo input oculto para o idioma de referência
     const quickAddButton = document.getElementById('quick-add-btn');
-    let referenceLanguage = 'en'; // Valor padrão
+    let referenceLanguage = hiddenReferenceLanguageInput.value; // Usar o valor do input oculto
     let translations = JSON.parse(hiddenTranslationsInput.value); // Usar o valor do input oculto
 
     if (createKeyButton) {
         createKeyButton.addEventListener('click', () => {
+            translations = collectTranslations(); // Coletar traduções antes de adicionar nova chave
+            saveTranslations(translations); // Salvar traduções antes de adicionar nova chave
             const searchValue = searchInput.value;
             createKey(searchValue || 'new_key');
             updateHighlight();
@@ -86,15 +89,18 @@ window.addEventListener('DOMContentLoaded', (event) => {
     });
 
     updateTranslations(translations); // Adicione esta linha para gerar as traduções a partir do objeto translations
+    updateProgress(); // Chame a função para calcular a porcentagem assim que iniciar
 
     function updateTranslations(translations) {
         const translationsBody = document.getElementById('translations-body');
+        const tableHeaders = document.getElementById('table-headers');
         const currentFilter = {
             query: searchInput.value.toLowerCase(),
             type: searchType.value
         };
 
         translationsBody.innerHTML = ''; // Limpe o corpo da tabela
+        tableHeaders.innerHTML = '<th>Chave</th>'; // Limpe os headers da tabela
         const languages = Object.keys(translations);
         const keys = new Set();
 
@@ -104,7 +110,21 @@ window.addEventListener('DOMContentLoaded', (event) => {
 
         const sortedKeys = Array.from(keys).sort();
 
-        const rows = generateRows(sortedKeys, languages, translations);
+        // Ordenar os idiomas para que o idioma de referência seja o primeiro
+        const sortedLanguages = languages.sort((a, b) => {
+            if (a === referenceLanguage) return -1;
+            if (b === referenceLanguage) return 1;
+            return 0;
+        });
+
+        // Gerar os headers no frontend
+        sortedLanguages.forEach(language => {
+            const th = document.createElement('th');
+            th.textContent = language;
+            tableHeaders.appendChild(th);
+        });
+
+        const rows = generateRows(sortedKeys, sortedLanguages, translations);
 
         translationsBody.innerHTML = rows;
         attachEventListeners();
@@ -207,6 +227,13 @@ window.addEventListener('DOMContentLoaded', (event) => {
                 if (this && this.dataset && this.dataset.key && this.dataset.language) {
                     const key = this.dataset.key;
                     const language = this.dataset.language;
+                    if (language === referenceLanguage) {
+                        vscode.postMessage({
+                            command: 'showErrorMessage',
+                            message: 'Não é possível traduzir o idioma de referência com IA.'
+                        });
+                        return;
+                    }
                     const referenceText = getReferenceText(key);
                     if (referenceText) {
                         vscode.postMessage({
@@ -253,8 +280,25 @@ window.addEventListener('DOMContentLoaded', (event) => {
     }
 
     function createKey(newKey) {
-        addNewKey(translations, newKey);
-        updateTranslations(translations);
+        if (isDuplicateKey(newKey)) {
+            vscode.postMessage({
+                command: 'showErrorMessage',
+                message: `A chave "${newKey}" já existe.`
+            });
+        } else {
+            if (Object.keys(translations).length === 0) {
+                translations[referenceLanguage] = {}; // Inicializar o objeto translations se estiver vazio
+            }
+            addNewKey(translations, newKey);
+            hiddenTranslationsInput.value = JSON.stringify(translations); // Atualizar o valor do input oculto
+            updateTranslations(translations);
+        }
+    }
+
+    function isDuplicateKey(newKey) {
+        const keys = new Set();
+        collectKeys(translations[referenceLanguage], keys);
+        return keys.has(newKey);
     }
 
     function deleteKey(key) {
@@ -390,6 +434,8 @@ window.addEventListener('DOMContentLoaded', (event) => {
             const text = document.getElementById('quick-add-text').value;
 
             if (key && text) {
+                translations = collectTranslations(); // Coletar traduções antes de adicionar nova chave
+                saveTranslations(translations); // Salvar traduções antes de adicionar nova chave
                 vscode.postMessage({
                     command: 'quickAdd',
                     key: key,

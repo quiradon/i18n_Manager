@@ -35,21 +35,6 @@ export async function saveTranslations(i18nPath: string, translations: { [key: s
   }
 }
 
-export function addNewKey(translations: { [key: string]: any }, newKey: string) {
-  const languages = Object.keys(translations);
-  languages.forEach(language => {
-    const keys = newKey.split('.');
-    let current = translations[language];
-    for (let i = 0; i < keys.length - 1; i++) {
-      if (!current[keys[i]]) {
-        current[keys[i]] = {};
-      }
-      current = current[keys[i]];
-    }
-    current[keys[keys.length - 1]] = '';
-  });
-}
-
 export function updateTranslation(translations: { [key: string]: any }, key: string, language: string, value: string) {
   const keys = key.split('.');
   let current = translations[language];
@@ -63,19 +48,4 @@ export function updateTranslation(translations: { [key: string]: any }, key: str
       current = current[keys[i]];
     }
   }
-}
-
-export function deleteKey(translations: { [key: string]: any }, key: string) {
-  const languages = Object.keys(translations);
-  languages.forEach(language => {
-    const keys = key.split('.');
-    let current = translations[language];
-    for (let i = 0; i < keys.length - 1; i++) {
-      if (!current[keys[i]]) {
-        return;
-      }
-      current = current[keys[i]];
-    }
-    delete current[keys[keys.length - 1]];
-  });
 }

@@ -14,8 +14,12 @@ function escapeHtml(unsafe: string): string {
 }
 
 export function getWebviewContent(translations: { [key: string]: any }, webview: vscode.Webview, context: vscode.ExtensionContext): string {
-  const languages = Object.keys(translations);
-  const headers = languages.map(language => `<th>${language}</th>`).join('');
+  const referenceLanguage = vscode.workspace.getConfiguration().get('arkanus-i18n.defaultFileName') || 'en';
+  const languages = Object.keys(translations).sort((a, b) => {
+    if (a === referenceLanguage) return -1;
+    if (b === referenceLanguage) return 1;
+    return 0;
+  });
 
   let Beta = true;
   let scriptUri;
@@ -60,9 +64,9 @@ export function getWebviewContent(translations: { [key: string]: any }, webview:
       <div class="table-container">
         <table>
           <thead>
-            <tr>
+            <tr id="table-headers">
               <th>Chave</th>
-              ${headers}
+              <!-- Os headers serão gerados no frontend -->
             </tr>
           </thead>
           <tbody id="translations-body">
@@ -71,6 +75,7 @@ export function getWebviewContent(translations: { [key: string]: any }, webview:
         </table>
       </div>
       <input type="hidden" id="hidden-translations-input" value='${escapeHtml(JSON.stringify(translations))}'> <!-- Novo input oculto -->
+      <input type="hidden" id="hidden-reference-language" value='${referenceLanguage}'> <!-- Novo input oculto para o idioma de referência -->
       <script src="${scriptUri}"></script>
     </body>
     </html>

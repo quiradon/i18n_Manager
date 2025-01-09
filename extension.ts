@@ -167,6 +167,9 @@ export function activate(context: vscode.ExtensionContext) {
                 panel.webview.postMessage({ command: 'updateTranslations', translations });
                 vscode.window.showInformationMessage('Tradução adicionada e preenchida com sucesso!');
                 break;
+              case 'showErrorMessage':
+                vscode.window.showErrorMessage(message.message);
+                break;
               // ...existing code...
             }
           },
